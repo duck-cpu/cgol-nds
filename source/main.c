@@ -14,21 +14,39 @@ int main(void)
     int grid_curr[24][32] = {0};
     int grid_next[24][32] = {0};
 
-    // example cell
-    for (int y = 0; y < 24; y++)
-        for (int x = 0; x < 32; x++)
-            grid_curr[y][x] = (rand() % 4 == 0);
-
     struct life
     {
         int state; // 1 or 0
         int neighbors;
     };
 
+    iprintf("PRESS START.");
+
     while (1)
     {
         swiWaitForVBlank();
         swiDelay(1000000);
+        // read buttons
+        scanKeys();
+        int keys = keysDown();
+
+        // start and reset
+        if (keys & KEY_START)
+        {
+            iprintf("\x1b[2J");
+            iprintf("\x1b[H");
+
+            memset(grid_prev, 0, sizeof(grid_prev));
+            memset(grid_curr, 0, sizeof(grid_curr));
+            memset(grid_next, 0, sizeof(grid_next));
+
+            // seed
+            for (int y = 0; y < 24; y++)
+                for (int x = 0; x < 32; x++)
+                    grid_curr[y][x] = (rand() % 4 == 0);
+
+            memcpy(grid_prev, grid_curr, sizeof(grid_prev));
+        }
 
         struct life cell;
 
@@ -85,7 +103,7 @@ int main(void)
                 {
                     iprintf("\x1b[%d;%dH", i + 1, j + 1);
                     if (grid_curr[i][j] == 1)
-                        iprintf("%d", 0);
+                        iprintf(".");
                     else
                         iprintf(" ");
                 }
