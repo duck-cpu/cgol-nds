@@ -1,0 +1,16 @@
+# Ignore build
+/build/
+
+# Ignore binaries
+*.nds
+*.elf
+
+# Ignore artifacts
+*.map
+*.d
+*.o
+
+# Ignore backups
+*~
+*.swp
+*.tmp
