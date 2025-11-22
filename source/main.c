@@ -1,18 +1,45 @@
 #include <stdio.h>
 #include <nds.h>
 #include <time.h>
+#include <nds/arm9/console.h>
+
+PrintConsole bot_console;
+PrintConsole top_console;
+
+// 32x48 grids
+static int grid_prev[48][32] = {0}; // [y][x]
+static int grid_curr[48][32] = {0};
+static int grid_next[48][32] = {0};
 
 int main(void)
 {
+    videoSetMode(MODE_0_2D);
+    videoSetModeSub(MODE_0_2D);
+    vramSetBankA(VRAM_A_MAIN_BG);
+    vramSetBankC(VRAM_C_SUB_BG);
+
+    consoleInit(
+        &bot_console,
+        0,
+        BgType_Text4bpp,
+        BgSize_T_256x256,
+        31,
+        0,
+        false,
+        true);
+
+    consoleInit(
+        &top_console,
+        0,
+        BgType_Text4bpp,
+        BgSize_T_256x256,
+        30,
+        1,
+        true,
+        true);
+
     // seed
     srand(time(NULL));
-
-    consoleDemoInit();
-
-    // 32x24 grids
-    int grid_prev[24][32] = {0}; // [y][x]
-    int grid_curr[24][32] = {0};
-    int grid_next[24][32] = {0};
 
     struct life
     {
@@ -33,6 +60,11 @@ int main(void)
         // start and reset
         if (keys & KEY_START)
         {
+            consoleSelect(&bot_console);
+            iprintf("\x1b[2J");
+            iprintf("\x1b[H");
+
+            consoleSelect(&top_console);
             iprintf("\x1b[2J");
             iprintf("\x1b[H");
 
@@ -41,7 +73,7 @@ int main(void)
             memset(grid_next, 0, sizeof(grid_next));
 
             // seed
-            for (int y = 0; y < 24; y++)
+            for (int y = 0; y < 48; y++)
                 for (int x = 0; x < 32; x++)
                     grid_curr[y][x] = (rand() % 4 == 0);
 
@@ -52,7 +84,7 @@ int main(void)
 
         // simulate
         // life cycle loop
-        for (int y = 0; y < 24; y++)
+        for (int y = 0; y < 48; y++)
         {
             for (int x = 0; x < 32; x++)
             {
@@ -68,7 +100,7 @@ int main(void)
                         int ny = y + dy;
                         int nx = x + dx;
 
-                        if (ny >= 0 && ny < 24 && nx >= 0 && nx < 32 && grid_curr[ny][nx] == 1)
+                        if (ny >= 0 && ny < 48 && nx >= 0 && nx < 32 && grid_curr[ny][nx] == 1)
                             cell.neighbors++;
                     }
                 }
@@ -95,13 +127,25 @@ int main(void)
 
         // draw
         // draw loop
-        for (int i = 0; i < 24; i++)
+        for (int i = 0; i < 48; i++)
         {
             for (int j = 0; j < 32; j++)
             {
                 if (grid_curr[i][j] != grid_prev[i][j])
                 {
-                    iprintf("\x1b[%d;%dH", i + 1, j + 1);
+                    int screen_row;
+
+                    if (i < 24)
+                    {
+                        consoleSelect(&top_console);
+                        screen_row = i;
+                    }
+                    else
+                    {
+                        consoleSelect(&bot_console);
+                        screen_row = i - 24;
+                    }
+                    iprintf("\x1b[%d;%dH", screen_row + 1, j + 1);
                     if (grid_curr[i][j] == 1)
                         iprintf(".");
                     else
