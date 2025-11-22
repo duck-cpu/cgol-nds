@@ -9,6 +9,7 @@
 *.map
 *.d
 *.o
+*.mch
 
 # Ignore backups
 *~

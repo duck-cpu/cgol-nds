@@ -1,3 +1,15 @@
+/*
+game of life on DS
+
+TODO
+
+>add counters for generation and population
+>add start menu
+>add colors? sprites?
+>add ability to modify cells
+
+gh/duck-cpu - Vincent Moreno
+*/
 #include <stdio.h>
 #include <nds.h>
 #include <time.h>
@@ -11,6 +23,13 @@ static int grid_prev[48][32] = {0}; // [y][x]
 static int grid_curr[48][32] = {0};
 static int grid_next[48][32] = {0};
 
+// cell
+struct life
+{
+    int state; // 1 or 0, alive or dead
+    int neighbors;
+};
+
 int main(void)
 {
     videoSetMode(MODE_0_2D);
@@ -18,6 +37,7 @@ int main(void)
     vramSetBankA(VRAM_A_MAIN_BG);
     vramSetBankC(VRAM_C_SUB_BG);
 
+    // bottom screen
     consoleInit(
         &bot_console,
         0,
@@ -28,6 +48,7 @@ int main(void)
         false,
         true);
 
+    // top screen
     consoleInit(
         &top_console,
         0,
@@ -38,21 +59,17 @@ int main(void)
         true,
         true);
 
-    // seed
-    srand(time(NULL));
+    srand(time(NULL)); // seed "prototype"
 
-    struct life
-    {
-        int state; // 1 or 0
-        int neighbors;
-    };
-
+    consoleSelect(&bot_console);
     iprintf("PRESS START.");
 
     while (1)
     {
         swiWaitForVBlank();
-        swiDelay(1000000);
+
+        // swiDelay(1000000); // frame delay to slow simulation down
+
         // read buttons
         scanKeys();
         int keys = keysDown();
@@ -72,10 +89,9 @@ int main(void)
             memset(grid_curr, 0, sizeof(grid_curr));
             memset(grid_next, 0, sizeof(grid_next));
 
-            // seed
             for (int y = 0; y < 48; y++)
                 for (int x = 0; x < 32; x++)
-                    grid_curr[y][x] = (rand() % 4 == 0);
+                    grid_curr[y][x] = (rand() % 4 == 0); // seed
 
             memcpy(grid_prev, grid_curr, sizeof(grid_prev));
         }
@@ -122,6 +138,7 @@ int main(void)
                 }
             }
         }
+
         // promote
         memcpy(grid_curr, grid_next, sizeof(grid_curr));
 
@@ -145,7 +162,7 @@ int main(void)
                         consoleSelect(&bot_console);
                         screen_row = i - 24;
                     }
-                    iprintf("\x1b[%d;%dH", screen_row + 1, j + 1);
+                    iprintf("\x1b[%d;%dH", screen_row, j);
                     if (grid_curr[i][j] == 1)
                         iprintf(".");
                     else
@@ -153,6 +170,13 @@ int main(void)
                 }
             }
         }
+
+        // anchors cursor to the top left of each screen
+        consoleSelect(&bot_console);
+        iprintf("\x1b[H");
+        consoleSelect(&top_console);
+        iprintf("\x1b[H");
+
         // sync
         memcpy(grid_prev, grid_curr, sizeof(grid_prev));
     }
